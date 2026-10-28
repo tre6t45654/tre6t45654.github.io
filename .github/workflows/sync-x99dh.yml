@@ -1,0 +1,37 @@
+name: Sync from x99dh.cc
+
+on:
+  schedule:
+    - cron: "20 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download current homepage
+        run: |
+          curl -sS -L --compressed \
+            -A "Mozilla/5.0" \
+            -H "Accept: text/html" \
+            -o index.html \
+            "https://x99dh.cc/"
+          grep -q "X99资源导航" index.html
+          grep -q "sites-grid" index.html
+
+      - name: Commit when the page changed
+        run: |
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Sync homepage from x99dh.cc"
+          git push
